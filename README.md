@@ -1,112 +1,44 @@
-# **IITB Racing Autonomous: Path Planning & Controls Trainee Module**
----
+# Autonomous Racing: Path Planning & Controls
 
-## 🏎️ Who We Are
+My completed solutions to the **Path Planning & Controls (PPC) trainee module** for **IITB Racing Driverless**, a student-built autonomous electric race car that must complete a lap between blue and yellow track cones without collisions. The module is structured as four progressive checkpoints building toward a full closed-loop path-tracking pipeline, from raw waypoints to a car actually driving itself around a simulated track.
 
-We are the Path Planning and Controls Subsystem (PPC) of **IITB Racing Driverless**, a student-led team that builds autonomous electric race cars.
+*(This repo is a fork of the team's [trainee module template](https://github.com/AyuwanC/ppc_trainee_module) — the checkpoints below are my implementations.)*
 
-Our goal is to enable our car to **race autonomously between blue and yellow cones**, **complete a lap in the shortest possible time**, and **avoid collisions with any cones**. To achieve this, we focus on designing algorithms that generate **optimal paths** and provide **precise controls** to follow them.
+## Checkpoints
 
-### What We’ve Achieved So Far
-- **Delaunay Triangulation** for fast and smooth raceline generation  
-- **Optimized racelines** to reduce lap time  
-- **PID**, **Pure Pursuit** and **Stanley Controllers** for tracking paths  
-- **Velocity profiling** based on curvature  
+### 1. Interpolation (`checkpoint1_interpolation/`)
+Given sparse cone/waypoint coordinates, build a smooth drivable path between them:
+- Cubic spline interpolation implemented **from scratch** — hand-built the 4×(n-1) coefficient matrix and solved the boundary/continuity constraint system (value matching, first- and second-derivative continuity at knots, natural boundary conditions) directly, rather than calling a spline library
+- Comparison against `scipy.interpolate.CubicSpline` to validate the manual implementation
 
-### 🔬 What We’re Currently Working On
-- **RRT (Rapidly-exploring Random Trees)** for real-time path planning in unknown maps  
-- **MPC (Model Predictive Control)** for generating optimal control actions considering dynamics  
+### 2. Optimization & velocity profiling (`checkpoint2_optimization_velocity/`)
+A smooth path isn't enough — the car needs to know how fast it can safely take each section:
+- Arc-length parameterization of the path, then curvature computed from first/second derivatives of the parametric spline (`κ = |x'y'' − y'x''| / (x'² + y'²)^1.5`)
+- Curvature-based velocity profile: lower speed limits on high-curvature (tight) sections, higher limits on straights
 
-<table>
-  <tr>
-    <td align="center"><b>RRT Path Planning</b></td>
-    <td align="center"><b>MPC Optimal Control</b></td>
-    <td align="center"><b>Bot Run (PPC)</b></td>
-  </tr>
-  <tr>
-    <td><img src="assets/RRT.gif" height="300" width="300"/></td>
-    <td><img src="assets/MPC_sim.gif" height="300" width="300"/></td>
-    <td><img src="assets/Bot_Run.gif" height="300" width="300"/></td>
-  </tr>
-</table>
+### 3. Controls (`checkpoint3_controls/`)
+Getting the car to actually follow the planned path and velocity profile:
+- **PID controller** for throttle, tracking the target velocity profile from checkpoint 2
+- **Stanley controller** for steering, combining cross-track error and heading error to steer the car back onto the reference path
 
----
+### 4. Full closed-loop implementation (`checkpoint4_the_final_implementation/`)
+Everything integrated into one animated simulation:
+- Kinematic bicycle model for vehicle dynamics
+- PID throttle control + Stanley steering control running together in a closed loop against real cone-map waypoints (`waypoints.npy`, `blue_cones.npy`, `yellow_cones.npy`)
+- Matplotlib animation of the car tracking the generated raceline in real time
 
-## Introduction to Path Planning and Control
+## What this demonstrates
+Interpolation and spline math implemented from first principles, curvature-based trajectory optimization, and two classical path-tracking controllers (PID, Stanley) integrated into a working closed-loop vehicle simulation — the core control stack behind an autonomous race car's ability to drive itself around a track.
 
-**Path Planning and Control** is a critical subsystem that connects high-level perception with low-level actuation. It ensures that the autonomous race car not only knows **where to go** but also **how to get there** effectively and safely.
+## Stack
 
-### 📌 Path Planning:
-Generates a feasible and smooth trajectory based on the car’s position and the SLAM-generated map. We explore:
-- Linear & spline interpolation  
-- Delaunay triangulation  
-- Curvature-based optimization  
-- Algorithms like A*, RRT, and optimization-based planners  
+`NumPy` / `SciPy` · `Matplotlib` (animation)
 
-### 📌 Controls:
-Makes sure the car follows the planned trajectory by computing steering, throttle, and brake commands. We cover:
-- PID controllers for speed tracking  
-- Pure Pursuit and Stanley for steering  
-- Advanced controllers like MPC that take vehicle dynamics into account  
+## Running it
 
-Together, they allow our autonomous race car to drive dynamically and intelligently!
+```bash
+pip install -r requirements.txt
+jupyter notebook checkpoint4_the_final_implementation/06_complete_implementation.ipynb
+```
 
----
-
-## 📝 Instructions
-
-- Fork this repository on your github and then clone that forked repository to your pc to start working on it
-- Run this command to install all the required libraries - ```pip3 install -r requirements.txt```
-- You need to commit and push the changes onto your forked remote repository after you complete each checkpoint
-- Trainees are required to update the shared task sheet: [**Module Progress**](https://docs.google.com/spreadsheets/d/1hXMS8LUICqV97NlydCMAdYh4nwJZYO785qBW0F9S0BI/edit?gid=131938418#gid=131938418)
-- **Documentation is mandatory** for each checkpoint:
-  - Create a Google Doc titled `PPC_Module_YourName`
-  - Submit all the required code snippets= and videos/gifs in the doc
-  - Also document your learnings, errors faced, and any doubts
-  - Set sharing to **“anyone with the link”** and update the link in the task sheet
-- Don’t hesitate to reach out to **JDEs/DEs** if you're stuck or curious
-- Performance in this module will be used to judge your abilities and **assign subsystems** in the team
-- Most importantly, **have fun while learning**
-
----
-
-## 🧭 Module Overview
-
-This module is designed to give you a foundational understanding of the key concepts in Path Planning and Control. It is divided into **two main parts**:
-
-### 1. Path Planning
-- Interpolation  
-- Basic Optimization  
-- Velocity Profiling using Curvature
-  
-### 2. Controls
-- PID Control  
-- Bicycle Model  
-- Stanley Controller  
-
----
-
-## Learning Outcomes
-
-By the end of this module, you will be able to:
-- Interpolate smooth trajectories from cone maps  
-- Understand curvature and apply basic optimization principles to path smoothing  
-- Build a velocity profile that respects physical constraints  
-- Implement and tune a PID controller for velocity tracking  
-- Understand the kinematic bicycle model  
-- Implement a Stanley controller for path tracking  
-- Simulate and animate your car following the trajectory using Matplotlib  
-
----
-
-## 📅 Checkpoints
-
-| Checkpoint | Topic                        | Deliverable                                |
-|------------|------------------------------|--------------------------------------------|
-| 📍 Checkpoint 1 | Interpolation     | Interpolation of given waypoints       |
-| 📍 Checkpoint 2 | Optimization | Optimized path     |
-| 📍 Checkpoint 3 | PID & Stanley Control                  | Tuning of controllers   |
-| 📍 Checkpoint 4 | The Final Implementation          | Complete implementation of PPC pipline     |
-
-
----
+Each checkpoint's `.py`/`.ipynb` files are independently runnable and build toward the final integrated simulation.
